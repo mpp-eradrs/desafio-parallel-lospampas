@@ -155,7 +155,7 @@ void do_semi_step( double *state_init , double *state_forcing , double *state_ou
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Apply the tendencies to the fluid state
-    #pragma omp parallel for private(i, k)
+    #pragma acc parallel loop private(i, k)
     for (k=0; k<nnz; k++) {
       for (i=0; i<nnx; i++) {
         int inds = (k+hs)*(nnx+2*hs) + 0*(nnz+2*hs)*(nnx+2*hs) + i+hs;
@@ -188,9 +188,9 @@ void do_dir_x( double *state , double *flux , double *tend ) {
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Compute fluxes in the x-direction for each cell
-  #pragma acc kernels private(k, i, stencil, d_vals, vals)
-  {
+  #pragma acc parallel loop private(k, i, stencil, d_vals, vals) 
   for (k=0; k<nnz; k++) {
+    #pragma acc parallel loop vector
     for (i=0; i<nnx+1; i++) {
       //Use fourth-order interpolation from four cell averages to compute the value at the interface in question
         int inds = 0*(nnz+2*hs)*(nnx+2*hs) + (k+hs)*(nnx+2*hs) + i+0;
@@ -251,14 +251,12 @@ void do_dir_x( double *state , double *flux , double *tend ) {
       flux[POS_RHOT*(nnz+1)*(nnx+1) + k*(nnx+1) + i] = r*u*t   - v_coef*d_vals[POS_RHOT];
     }
   }
-  }
 
   /////////////////////////////////////////////////
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Use the fluxes to compute tendencies for each cell
-#pragma acc kernels private(k, i)
-{
+#pragma acc parallel loop private(k, i)
 for (k=0; k<nnz; k++) {
     for (i=0; i<nnx; i++) {
         int indt  = 0* nnz   * nnx    + k* nnx    + i  ;
@@ -277,10 +275,9 @@ for (k=0; k<nnz; k++) {
         indf1 = 3*(nnz+1)*(nnx+1) + k*(nnx+1) + i  ;
         indf2 = 3*(nnz+1)*(nnx+1) + k*(nnx+1) + i+1;
         tend[indt] = -( flux[indf2] - flux[indf1] ) / dx;
+      }
     }
-}
-}
-}
+  }
 
 
 
@@ -298,9 +295,9 @@ void do_dir_z( double *state , double *flux , double *tend ) {
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Compute fluxes in the x-direction for each cell
-  #pragma acc kernels private(k, i, stencil, d_vals, vals)
-  {
+  #pragma acc parallel loop private(k, i, stencil, d_vals, vals)
   for (k=0; k<nnz+1; k++) {
+    #pragma acc parallel loop vector
     for (i=0; i<nnx; i++) {
       //Use fourth-order interpolation from four cell averages to compute the value at the interface in question
         int inds = 0*(nnz+2*hs)*(nnx+2*hs) + (k+0)*(nnx+2*hs) + i+hs;
@@ -374,12 +371,12 @@ void do_dir_z( double *state , double *flux , double *tend ) {
       flux[POS_RHOT*(nnz+1)*(nnx+1) + k*(nnx+1) + i] = r*w*t   - v_coef*d_vals[POS_RHOT];
     }
   }
-}
 
   /////////////////////////////////////////////////
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Use the fluxes to compute tendencies for each cell
+    #pragma acc parallel loop private(k, i)
     for (k=0; k<nnz; k++) {
         for (i=0; i<nnx; i++) {
         int indt  = 0* nnz   * nnx    + k* nnx    + i  ;
