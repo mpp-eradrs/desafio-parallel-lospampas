@@ -378,6 +378,7 @@ void do_dir_z( double *state , double *flux , double *tend ) {
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Use the fluxes to compute tendencies for each cell
+  #pragma omp parallel for private(k, i)
     for (k=0; k<nnz; k++) {
         for (i=0; i<nnx; i++) {
         int indt  = 0* nnz   * nnx    + k* nnx    + i  ;

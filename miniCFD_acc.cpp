@@ -188,9 +188,8 @@ void do_dir_x( double *state , double *flux , double *tend ) {
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Compute fluxes in the x-direction for each cell
-  #pragma acc parallel loop private(k, i, stencil, d_vals, vals) 
+  #pragma acc parallel loop vector private(k, i, stencil, d_vals, vals) 
   for (k=0; k<nnz; k++) {
-    #pragma acc parallel loop vector
     for (i=0; i<nnx+1; i++) {
       //Use fourth-order interpolation from four cell averages to compute the value at the interface in question
         int inds = 0*(nnz+2*hs)*(nnx+2*hs) + (k+hs)*(nnx+2*hs) + i+0;
@@ -286,6 +285,7 @@ for (k=0; k<nnz; k++) {
 //Since the halos are set in a separate routine, this will not require MPI
 //First, compute the flux vector at each cell interface in the z-direction (including viscosity)
 //Then, compute the tendencies using those fluxes
+
 void do_dir_z( double *state , double *flux , double *tend ) {
   int    i,k;
   double stencil[4], d_vals[NUM_VARS], vals[NUM_VARS], v_coef;
@@ -295,9 +295,8 @@ void do_dir_z( double *state , double *flux , double *tend ) {
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Compute fluxes in the x-direction for each cell
-  #pragma acc parallel loop private(k, i, stencil, d_vals, vals)
+  #pragma acc parallel loop vector private(k, i, stencil, d_vals, vals)
   for (k=0; k<nnz+1; k++) {
-    #pragma acc parallel loop vector
     for (i=0; i<nnx; i++) {
       //Use fourth-order interpolation from four cell averages to compute the value at the interface in question
         int inds = 0*(nnz+2*hs)*(nnx+2*hs) + (k+0)*(nnx+2*hs) + i+hs;
