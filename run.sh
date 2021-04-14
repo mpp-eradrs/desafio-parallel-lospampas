@@ -1,5 +1,5 @@
 #!/bin/bash
 
-./miniCFD
-
+./miniCFD_omp
+#./miniCFD
 
