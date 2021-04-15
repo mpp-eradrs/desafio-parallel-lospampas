@@ -164,9 +164,10 @@ void do_semi_step( double *state_init , double *state_forcing , double *state_ou
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Apply the tendencies to the fluid state
-#pragma acc parallel loop gang vector_length(512) private(k, i) present(tend[0:nnx*nnz*NUM_VARS], state_out[0:size_state], state_init[0:size_state])
+//#pragma acc parallel loop gang vector_length(512) private(k, i) present(tend[0:nnx*nnz*NUM_VARS], state_out[0:size_state], state_init[0:size_state])
+#pragma acc parallel loop independent private(k, i) present(tend[0:nnx*nnz*NUM_VARS], state_out[0:size_state], state_init[0:size_state])
   for (k=0; k<nnz; k++) {
-  #pragma acc loop vector
+  #pragma acc loop vector independent
       for (i=0; i<nnx; i++) {
         int inds = (k+hs)*(nnx+2*hs) + 0*(nnz+2*hs)*(nnx+2*hs) + i+hs;
         int indt = 0*nnz*nnx + k*nnx + i;
@@ -198,9 +199,10 @@ void do_dir_x( double *state , double *flux , double *tend ) {
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Compute fluxes in the x-direction for each cell
-#pragma acc parallel loop gang vector_length(512) present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) private(vals, d_vals, stencil) copyin(v_coef, stencil[0:4], d_vals[0:NUM_VARS], vals[0:NUM_VARS])
+//#pragma acc parallel loop gang vector_length(512) present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) private(vals, d_vals, stencil) copyin(v_coef, stencil[0:4], d_vals[0:NUM_VARS], vals[0:NUM_VARS])
+#pragma acc parallel loop independent present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) private(vals, d_vals, stencil) copyin(v_coef, stencil[0:4], d_vals[0:NUM_VARS], vals[0:NUM_VARS])
   for (int k=0; k<nnz; k++) {
-#pragma acc loop vector
+#pragma acc loop vector independent
     for (int i=0; i<nnx+1; i++) {
       //Use fourth-order interpolation from four cell averages to compute the value at the interface in question
       for (int ll=0; ll<NUM_VARS; ll++) {
@@ -239,9 +241,10 @@ void do_dir_x( double *state , double *flux , double *tend ) {
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Use the fluxes to compute tendencies for each cell
-#pragma acc parallel loop gang vector_length(512) present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS])
+//#pragma acc parallel loop gang vector_length(512) present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS])
+#pragma acc parallel loop independent present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS])
  for (int k=0; k<nnz; k++) {
-        #pragma acc loop vector
+      #pragma acc loop vector independent
       for (int i=0; i<nnx; i++) {
         int indt  = 0* nnz   * nnx    + k* nnx    + i  ;
         int indf1 = 0*(nnz+1)*(nnx+1) + k*(nnx+1) + i  ;
@@ -278,9 +281,10 @@ void do_dir_z( double *state , double *flux , double *tend ) {
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Compute fluxes in the x-direction for each cell
-#pragma acc parallel loop gang vector_length(512) present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) private(vals, d_vals, stencil) copyin(v_coef, stencil[0:4], d_vals[0:NUM_VARS], vals[0:NUM_VARS])
+//#pragma acc parallel loop gang vector_length(512) present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) private(vals, d_vals, stencil) copyin(v_coef, stencil[0:4], d_vals[0:NUM_VARS], vals[0:NUM_VARS])
+#pragma acc parallel loop independent present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) private(vals, d_vals, stencil) copyin(v_coef, stencil[0:4], d_vals[0:NUM_VARS], vals[0:NUM_VARS])
   for (k=0; k<nnz+1; k++) {
-#pragma acc loop vector
+#pragma acc loop vector independent
     for (i=0; i<nnx; i++) {
       //Use fourth-order interpolation from four cell averages to compute the value at the interface in question
       for (ll=0; ll<NUM_VARS; ll++) {
@@ -323,9 +327,10 @@ void do_dir_z( double *state , double *flux , double *tend ) {
   // TODO: THREAD ME
   /////////////////////////////////////////////////
   //Use the fluxes to compute tendencies for each cell
-#pragma acc parallel loop gang vector_length(512) present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS], state[0:size_state])
+//#pragma acc parallel loop gang vector_length(512) present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS], state[0:size_state])
+#pragma acc parallel loop independent present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS], state[0:size_state])
     for (k=0; k<nnz; k++) {
-#pragma acc loop vector
+#pragma acc loop vector independent
       for (i=0; i<nnx; i++) {
         int indt  = 0* nnz   * nnx    + k* nnx    + i  ;
         int indf1 = 0*(nnz+1)*(nnx+1) + (k  )*(nnx+1) + i;
@@ -367,7 +372,8 @@ void exchange_border_x( double *state ) {
   //////////////////////////////////////////////////////
   // DELETE THE SERIAL CODE BELOW AND REPLACE WITH MPI
   //////////////////////////////////////////////////////
-#pragma acc parallel loop vector vector_length(512) present(state[0:size_state])
+//#pragma acc parallel loop vector vector_length(512) present(state[0:size_state])
+#pragma acc parallel loop independent present(state[0:size_state])
     for (k=0; k<nnz; k++) {
       state[0*(nnz+2*hs)*(nnx+2*hs) + (k+hs)*(nnx+2*hs) + 0      ] = state[0*(nnz+2*hs)*(nnx+2*hs) + (k+hs)*(nnx+2*hs) + nnx+hs-2];
       state[0*(nnz+2*hs)*(nnx+2*hs) + (k+hs)*(nnx+2*hs) + 1      ] = state[0*(nnz+2*hs)*(nnx+2*hs) + (k+hs)*(nnx+2*hs) + nnx+hs-1];
@@ -393,8 +399,10 @@ void exchange_border_x( double *state ) {
 
   if (config_spec == CONFIG_IN_TEST6) {
     if (myrank == 0) {
-      #pragma acc parallel loop gang vector_length(512) present(state[0:size_state], cfd_dens_cell[0:nnz+2*hs]) private(k, i, z, ind_r, ind_u, ind_t)
+      //#pragma acc parallel loop gang vector_length(512) present(state[0:size_state], cfd_dens_cell[0:nnz+2*hs]) private(k, i, z, ind_r, ind_u, ind_t)
+      #pragma acc parallel loop independent present(state[0:size_state], cfd_dens_cell[0:nnz+2*hs]) private(k, i, z, ind_r, ind_u, ind_t)
       for (k=0; k<nnz; k++) {
+        #pragma acc parallel loop vector independent 
         for (i=0; i<hs; i++) {
           z = (k_beg + k+0.5)*dz;
           if (fabs(z-3*zlen/4) <= zlen/16) {
@@ -421,7 +429,8 @@ void exchange_border_z( double *state ) {
   // TODO: THREAD ME
   /////////////////////////////////////////////////
 //  for (ll=0; ll<NUM_VARS; ll++) {
-    #pragma acc parallel loop vector_length(512) present(state[0:size_state]) private(i, x, xloc, mnt_deriv, dx)
+    //#pragma acc parallel loop vector_length(512) present(state[0:size_state]) private(i, x, xloc, mnt_deriv, dx)
+    #pragma acc parallel loop independent present(state[0:size_state]) private(i, x, xloc, mnt_deriv, dx)
     for (i=0; i<nnx+2*hs; i++) {
         state[0*(nnz+2*hs)*(nnx+2*hs) + (0      )*(nnx+2*hs) + i] = state[0*(nnz+2*hs)*(nnx+2*hs) + (hs     )*(nnx+2*hs) + i];
         state[0*(nnz+2*hs)*(nnx+2*hs) + (1      )*(nnx+2*hs) + i] = state[0*(nnz+2*hs)*(nnx+2*hs) + (hs     )*(nnx+2*hs) + i];
