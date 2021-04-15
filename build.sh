@@ -10,4 +10,4 @@ SIM_TIME=400
 # TODO modifique a compilacao do programa abaixo se precisar
 g++ -Wall -fopenmp -fopenmp-simd -O3 -D_NX=$NX -D_NZ=$NZ -D_SIM_TIME=$SIM_TIME -D_OUT_FREQ=$FREQ -D_IN_CONFIG=$CONFIG -o miniCFD_omp miniCFD_omp.cpp 
 g++ -Wall -D_NX=$NX -D_NZ=$NZ -D_SIM_TIME=$SIM_TIME -D_OUT_FREQ=$FREQ -D_IN_CONFIG=$CONFIG -o miniCFD miniCFD_serial.cpp 
-pgc++ -O4 -Minfo=all -ta=tesla:managed -mp -acc -D_NX=$NX -D_NZ=$NZ -D_SIM_TIME=$SIM_TIME -D_OUT_FREQ=$FREQ -D_IN_CONFIG=$CONFIG -o miniCFD_acc miniCFD_acc.cpp
+pgc++ -O4 -Minfo=all -ta=tesla -mp -acc -D_NX=$NX -D_NZ=$NZ -D_SIM_TIME=$SIM_TIME -D_OUT_FREQ=$FREQ -D_IN_CONFIG=$CONFIG -o miniCFD_acc miniCFD_acc.cpp
