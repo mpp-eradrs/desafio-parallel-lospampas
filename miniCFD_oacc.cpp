@@ -323,6 +323,7 @@ void do_dir_z( double *state , double *flux , double *tend ) {
   /////////////////////////////////////////////////
   //Compute fluxes in the x-direction for each cell
 //#pragma acc parallel loop gang vector_length(512) present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) private(vals, d_vals, stencil) copyin(v_coef, stencil[0:4], d_vals[0:NUM_VARS], vals[0:NUM_VARS])
+
 #pragma acc parallel loop collapse(2) vector_length(128) independent cache(flux) present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) async(0)
   for (int k=0; k<nnz+1; k++) {
     for (int i=0; i<nnx; i++) {
@@ -378,6 +379,7 @@ void do_dir_z( double *state , double *flux , double *tend ) {
     }
   }
 
+  
 
   /////////////////////////////////////////////////
   // TODO: THREAD ME
@@ -410,6 +412,7 @@ void do_dir_z( double *state , double *flux , double *tend ) {
         tend[indt] = -( flux[indf2] - flux[indf1] ) / dz;
       }
    }
+
 }
 
 
