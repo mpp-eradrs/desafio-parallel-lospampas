@@ -159,28 +159,24 @@ void do_semi_step( double *state_init , double *state_forcing , double *state_ou
   /////////////////////////////////////////////////
   //Apply the tendencies to the fluid state
 //#pragma acc parallel loop gang vector_length(512) private(k, i) present(tend[0:nnx*nnz*NUM_VARS], state_out[0:size_state], state_init[0:size_state])
-int nnz2 = nnz+2*hs;
-int nnx2 = nnx+2*hs;
-int nova = nnz2*nnx2;
-#pragma acc parallel loop independent collapse(2) vector_length(128) present(tend[0:nnx*nnz*NUM_VARS], state_out[0:size_state], state_init[0:size_state]) async(0)
+#pragma acc parallel loop independent collapse(2) present(tend[0:nnx*nnz*NUM_VARS], state_out[0:size_state], state_init[0:size_state]) async
   for (int k=0; k<nnz; k++) {
+//  #pragma acc loop vector independent
       for (int i=0; i<nnx; i++) {
-       int inds = (k+hs)*(nnx2) + i+hs;
-        int indt = k*nnx + i;
+        int inds = (k+hs)*(nnx+2*hs) + 0*(nnz+2*hs)*(nnx+2*hs) + i+hs;
+        int indt = 0*nnz*nnx + k*nnx + i;
         state_out[inds] = state_init[inds] + dt * tend[indt];
-        int inds1 = (k+hs)*nnx2 + 1*(nova) + i+hs;
-        int indt1 = 1*nnz*nnx + k*nnx + i;
-        state_out[inds1] = state_init[inds1] + dt * tend[indt1];
-        int inds2 = (k+hs)*(nnx2) + 2*(nova) + i+hs;
-        int indt2 = 2*nnz*nnx + k*nnx + i;
-        state_out[inds2] = state_init[inds2] + dt * tend[indt2];
-	int inds3 = (k+hs)*(nnx2) + 3*(nova) + i+hs;
-        int indt3 = 3*nnz*nnx + k*nnx + i;
-        state_out[inds3] = state_init[inds3] + dt * tend[indt3];
+        inds = (k+hs)*(nnx+2*hs) + 1*(nnz+2*hs)*(nnx+2*hs) + i+hs;
+        indt = 1*nnz*nnx + k*nnx + i;
+        state_out[inds] = state_init[inds] + dt * tend[indt];
+        inds = (k+hs)*(nnx+2*hs) + 2*(nnz+2*hs)*(nnx+2*hs) + i+hs;
+        indt = 2*nnz*nnx + k*nnx + i;
+        state_out[inds] = state_init[inds] + dt * tend[indt];
+        inds = (k+hs)*(nnx+2*hs) + 3*(nnz+2*hs)*(nnx+2*hs) + i+hs;
+        indt = 3*nnz*nnx + k*nnx + i;
+        state_out[inds] = state_init[inds] + dt * tend[indt];
       }
     }
-
-    
 }
 
 
@@ -198,8 +194,9 @@ void do_dir_x( double *state , double *flux , double *tend ) {
   /////////////////////////////////////////////////
   //Compute fluxes in the x-direction for each cell
 //#pragma acc parallel loop gang vector_length(512) present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) private(vals, d_vals, stencil) copyin(v_coef, stencil[0:4], d_vals[0:NUM_VARS], vals[0:NUM_VARS])
-#pragma acc parallel loop collapse(2) vector_length(128) independent present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) cache(flux) async(0)
+#pragma acc parallel loop collapse(2) present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) cache(flux) async
   for (int k=0; k<nnz; k++) {
+//#pragma acc loop vector independent
     for (int i=0; i<nnx+1; i++) {
       //Use fourth-order interpolation from four cell averages to compute the value at the interface in question
 //      for (int ll=0; ll<NUM_VARS; ll++) {
@@ -283,7 +280,7 @@ void do_dir_x( double *state , double *flux , double *tend ) {
   /////////////////////////////////////////////////
   //Use the fluxes to compute tendencies for each cell
 //#pragma acc parallel loop gang vector_length(512) present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS])
-#pragma acc parallel loop collapse(2) vector_length(128) independent present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS]) cache(flux) async(0)
+#pragma acc parallel loop collapse(2) present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS]) cache(flux) async
  for (int k=0; k<nnz; k++) {
 //      #pragma acc loop vector independent
       for (int i=0; i<nnx; i++) {
@@ -323,7 +320,7 @@ void do_dir_z( double *state , double *flux , double *tend ) {
   /////////////////////////////////////////////////
   //Compute fluxes in the x-direction for each cell
 //#pragma acc parallel loop gang vector_length(512) present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) private(vals, d_vals, stencil) copyin(v_coef, stencil[0:4], d_vals[0:NUM_VARS], vals[0:NUM_VARS])
-#pragma acc parallel loop collapse(2) vector_length(128) independent cache(flux) present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) async(0)
+#pragma acc parallel loop collapse(2) independent cache(flux) present(state[0:size_state], flux[0:(nnx+1)*(nnz+1)*NUM_VARS], cfd_dens_theta_cell[0:nnz+2*hs],cfd_dens_cell[0:nnz+2*hs]) async
   for (int k=0; k<nnz+1; k++) {
     for (int i=0; i<nnx; i++) {
           int aux1 = (nnz+2*hs)*(nnx+2*hs);
@@ -385,7 +382,7 @@ void do_dir_z( double *state , double *flux , double *tend ) {
   //Use the fluxes to compute tendencies for each cell
 //#pragma acc parallel loop gang vector_length(512) present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS], state[0:size_state])
 
-  #pragma acc parallel loop collapse(2) vector_length(128)  independent present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS], state[0:size_state]) async(0)
+  #pragma acc parallel loop collapse(2) present(tend[0:nnx*nnz*NUM_VARS],flux[0:(nnx+1)*(nnz+1)*NUM_VARS], state[0:size_state]) async
     for (int k=0; k<nnz; k++) {
 //#pragma acc loop vector independent
       for (int i=0; i<nnx; i++) {
@@ -430,7 +427,7 @@ void exchange_border_x( double *state ) {
   // DELETE THE SERIAL CODE BELOW AND REPLACE WITH MPI
   //////////////////////////////////////////////////////
 //#pragma acc parallel loop vector vector_length(512) present(state[0:size_state])
-#pragma acc parallel loop vector_length(128) independent present(state[0:size_state]) async
+#pragma acc parallel loop vector independent present(state[0:size_state]) async
     for (int k=0; k<nnz; k++) {
       state[0*(nnz+2*hs)*(nnx+2*hs) + (k+hs)*(nnx+2*hs) + 0      ] = state[0*(nnz+2*hs)*(nnx+2*hs) + (k+hs)*(nnx+2*hs) + nnx+hs-2];
       state[0*(nnz+2*hs)*(nnx+2*hs) + (k+hs)*(nnx+2*hs) + 1      ] = state[0*(nnz+2*hs)*(nnx+2*hs) + (k+hs)*(nnx+2*hs) + nnx+hs-1];
@@ -457,8 +454,9 @@ void exchange_border_x( double *state ) {
   if (config_spec == CONFIG_IN_TEST6) {
     if (myrank == 0) {
       //#pragma acc parallel loop gang vector_length(512) present(state[0:size_state], cfd_dens_cell[0:nnz+2*hs]) private(k, i, z, ind_r, ind_u, ind_t)
-      #pragma acc parallel loop collapse(2) vector_length(128)independent present(state[0:size_state], cfd_dens_cell[0:nnz+2*hs]) async(0)
+      #pragma acc parallel loop independent present(state[0:size_state], cfd_dens_cell[0:nnz+2*hs]) async
       for (int k=0; k<nnz; k++) {
+       	#pragma acc loop vector independent
          for (int i=0; i<hs; i++) {
           double z = (k_beg + k+0.5)*dz;
           if (fabs(z-3*zlen/4) <= zlen/16) {
@@ -478,13 +476,16 @@ void exchange_border_x( double *state ) {
 //Set this MPI task's halo values in the z-direction. This does not require MPI because there is no MPI
 //decomposition in the vertical direction
 void exchange_border_z( double *state ) {
+  int          i, ll;
+  const double mnt_width = xlen/8;
+  double       x, xloc, mnt_deriv;
   /////////////////////////////////////////////////
   // TODO: THREAD ME
   /////////////////////////////////////////////////
 //  for (ll=0; ll<NUM_VARS; ll++) {
     //#pragma acc parallel loop vector_length(512) present(state[0:size_state]) private(i, x, xloc, mnt_deriv, dx)
-    #pragma acc parallel loop vector_length(128) independent present(state[0:size_state]) async(0)
-    for (int i=0; i<nnx+2*hs; i++) {
+    #pragma acc parallel loop independent present(state[0:size_state]) private(i, x, xloc, mnt_deriv, dx) async
+    for (i=0; i<nnx+2*hs; i++) {
         state[0*(nnz+2*hs)*(nnx+2*hs) + (0      )*(nnx+2*hs) + i] = state[0*(nnz+2*hs)*(nnx+2*hs) + (hs     )*(nnx+2*hs) + i];
         state[0*(nnz+2*hs)*(nnx+2*hs) + (1      )*(nnx+2*hs) + i] = state[0*(nnz+2*hs)*(nnx+2*hs) + (hs     )*(nnx+2*hs) + i];
         state[0*(nnz+2*hs)*(nnx+2*hs) + (nnz+hs  )*(nnx+2*hs) + i] = state[0*(nnz+2*hs)*(nnx+2*hs) + (nnz+hs-1)*(nnx+2*hs) + i];
@@ -501,11 +502,11 @@ void exchange_border_z( double *state ) {
         state[2*(nnz+2*hs)*(nnx+2*hs) + (nnz+hs+1)*(nnx+2*hs) + i] = 0.;
         //Impose the vertical momentum effects of an artificial cos^2 mountain at the lower boundary
         if (config_spec == CONFIG_IN_TEST3) {
-          double x = (i_beg+i-hs+0.5)*dx;
-          if ( fabs(x-xlen/4) < xlen/8 ) {
-            double xloc = (x-(xlen/4)) / xlen/8;
+          x = (i_beg+i-hs+0.5)*dx;
+          if ( fabs(x-xlen/4) < mnt_width ) {
+            xloc = (x-(xlen/4)) / mnt_width;
             //Compute the derivative of the fake mountain
-            double mnt_deriv = -pi*cos(pi*xloc/2)*sin(pi*xloc/2)*10/dx;
+            mnt_deriv = -pi*cos(pi*xloc/2)*sin(pi*xloc/2)*10/dx;
             //w = (dz/dx)*u
             state[POS_WMOM*(nnz+2*hs)*(nnx+2*hs) + (0)*(nnx+2*hs) + i] = mnt_deriv*state[POS_UMOM*(nnz+2*hs)*(nnx+2*hs) + hs*(nnx+2*hs) + i];
             state[POS_WMOM*(nnz+2*hs)*(nnx+2*hs) + (1)*(nnx+2*hs) + i] = mnt_deriv*state[POS_UMOM*(nnz+2*hs)*(nnx+2*hs) + hs*(nnx+2*hs) + i];
@@ -669,22 +670,6 @@ void initialize( int *argc , char ***argv ) {
     cfd_dens_theta_int[k] = hr*ht;
     cfd_pressure_int  [k] = C0*pow((hr*ht),gamm);
   }
-  #pragma acc enter data create(flux[0:(nnx+1)*(nnz+1)*NUM_VARS])
-#pragma acc enter data create(state[0:size_state])
-#pragma acc enter data create(state_tmp[0:size_state])
-#pragma acc enter data create(tend[0:nnx*nnz*NUM_VARS])
-#pragma acc enter data copyin(cfd_dens_theta_cell[0:nnz+2*hs])
-#pragma acc enter data copyin(cfd_dens_theta_int[0:nnz+1])
-#pragma acc enter data copyin(cfd_dens_int[0:nnz+1])
-#pragma acc enter data copyin(cfd_dens_cell[0:nnz+2*hs])
-#pragma acc enter data copyin(cfd_pressure_int[0:nnz+1])
-#pragma acc update device(state[0:size_state])
-#pragma acc update device(cfd_dens_theta_cell[0:nnz+2*hs])
-#pragma acc update device(cfd_dens_theta_int[0:nnz+1])
-#pragma acc update device(cfd_dens_int[0:nnz+1])
-#pragma acc update device(cfd_dens_cell[0:nnz+2*hs])
-#pragma acc update device(cfd_pressure_int[0:nnz+1])
-
 }
 
 
@@ -882,6 +867,27 @@ int main(int argc, char **argv) {
   // MAIN TIME STEP LOOP
   ////////////////////////////////////////////////////
   auto c_start = std::clock();
+
+#pragma acc enter data create(flux[0:(nnx+1)*(nnz+1)*NUM_VARS])
+#pragma acc enter data create(state[0:size_state])
+#pragma acc enter data create(state_tmp[0:size_state])
+#pragma acc enter data create(tend[0:nnx*nnz*NUM_VARS])
+#pragma acc enter data copyin(cfd_dens_theta_cell[0:nnz+2*hs])
+#pragma acc enter data copyin(cfd_dens_theta_int[0:nnz+1])
+#pragma acc enter data copyin(cfd_dens_int[0:nnz+1])
+#pragma acc enter data copyin(cfd_dens_cell[0:nnz+2*hs])
+#pragma acc enter data copyin(cfd_pressure_int[0:nnz+1])
+#pragma acc update device(state[0:size_state])
+/* acc_set_device_num(1, acc_device_default);
+#pragma acc enter data copyin(flux[0:(nnx+1)*(nnz+1)*NUM_VARS])
+#pragma acc enter data copyin(state[0:size_state])
+#pragma acc enter data copyin(state_tmp[0:size_state])
+#pragma acc enter data copyin(tend[0:nnx*nnz*NUM_VARS])
+#pragma acc enter data copyin(cfd_dens_theta_cell[0:nnz+2*hs])
+#pragma acc enter data copyin(cfd_dens_theta_int[0:nnz+1])
+#pragma acc enter data copyin(cfd_dens_int[0:nnz+1])
+#pragma acc enter data copyin(cfd_dens_cell[0:nnz+2*hs])
+#pragma acc enter data copyin(cfd_pressure_int[0:nnz+1])*/
 
   while (etime < sim_time) {
     //If the time step leads to exceeding the simulation time, shorten it for the last step
